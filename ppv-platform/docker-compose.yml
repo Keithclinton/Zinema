@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ppv
+      POSTGRES_USER: ppvuser
+      POSTGRES_PASSWORD: ppvpass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+
+  django:
+    build: ./django_app
+    command: sh -c "python manage.py migrate && gunicorn django_app.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - ./django_app:/app
+    env_file:
+      - ./django_app/.env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8000:8000"
+
+  fastapi:
+    build: ./fastapi_app
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+    volumes:
+      - ./fastapi_app:/app
+    env_file:
+      - ./fastapi_app/.env
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "8001:8001"
+
+volumes:
+  postgres_data:
