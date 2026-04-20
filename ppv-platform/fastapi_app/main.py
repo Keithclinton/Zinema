@@ -13,11 +13,11 @@ load_dotenv()
 app = FastAPI()
 
 DB_PARAMS = {
-    'dbname': os.getenv('POSTGRES_DB', 'ppv'),
-    'user': os.getenv('POSTGRES_USER', 'ppvuser'),
-    'password': os.getenv('POSTGRES_PASSWORD', 'ppvpass'),
-    'host': os.getenv('POSTGRES_HOST', 'db'),
-    'port': os.getenv('POSTGRES_PORT', '5432'),
+    'dbname': os.getenv('PGDATABASE', os.getenv('POSTGRES_DB', 'ppv')),
+    'user': os.getenv('PGUSER', os.getenv('POSTGRES_USER', 'ppvuser')),
+    'password': os.getenv('PGPASSWORD', os.getenv('POSTGRES_PASSWORD', 'ppvpass')),
+    'host': os.getenv('PGHOST', os.getenv('POSTGRES_HOST', 'db')),
+    'port': os.getenv('PGPORT', os.getenv('POSTGRES_PORT', '5432')),
 }
 
 SECRET_KEY = os.getenv('FASTAPI_SECRET_KEY', 'changeme')
