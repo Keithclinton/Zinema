@@ -4,3 +4,4 @@ redis
 stripe
 python-dotenv
 djangorestframework
+django-cors-headers
