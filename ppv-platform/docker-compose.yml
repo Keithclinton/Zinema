@@ -1,6 +1,14 @@
+
 version: '3.9'
 
 services:
+  nginx:
+    build: ./nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - django
+      - fastapi
   db:
     image: postgres:15
     restart: always
@@ -44,6 +52,7 @@ services:
       - redis
     ports:
       - "8001:8001"
+
 
 volumes:
   postgres_data:
