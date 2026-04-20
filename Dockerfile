@@ -3,16 +3,16 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Copy requirements from both apps
-COPY django_app/requirements.txt ./django_requirements.txt
-COPY fastapi_app/requirements.txt ./fastapi_requirements.txt
+COPY ppv-platform/django_app/requirements.txt ./django_requirements.txt
+COPY ppv-platform/fastapi_app/requirements.txt ./fastapi_requirements.txt
 
 # Combine requirements and install
 RUN cat django_requirements.txt fastapi_requirements.txt > requirements.txt \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy all app code
-COPY django_app ./django_app
-COPY fastapi_app ./fastapi_app
+COPY ppv-platform/django_app ./django_app
+COPY ppv-platform/fastapi_app ./fastapi_app
 COPY start.sh ./start.sh
 
 # Make start.sh executable
