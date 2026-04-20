@@ -1,0 +1,4 @@
+# Ignore environment variable files containing secrets
+.env
+ppv-platform/fastapi_app/.env
+ppv-platform/django_app/.env

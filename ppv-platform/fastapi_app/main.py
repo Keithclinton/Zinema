@@ -1,17 +1,11 @@
 
+# FastAPI import
+from fastapi import FastAPI
 import os
 import sys
-import uuid
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
-from datetime import datetime, timedelta, timezone
-import psycopg2
-import json
-import jwt
 from dotenv import load_dotenv
-
-# Add parent directory to sys.path for shared imports
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Ensure /app is in sys.path for Docker
+sys.path.insert(0, "/app")
 from shared.redis_utils import get_token, atomic_increment_usage
 
 load_dotenv()
