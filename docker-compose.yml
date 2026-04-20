@@ -3,7 +3,7 @@ version: '3.9'
 
 services:
   nginx:
-    build: ./nginx
+    build: ./ppv-platform/nginx
     ports:
       - "80:80"
     depends_on:
@@ -28,12 +28,12 @@ services:
       - "6379:6379"
 
   django:
-    build: ./django_app
+    build: ./ppv-platform/django_app
     command: sh -c "python manage.py migrate && gunicorn django_app.wsgi:application --bind 0.0.0.0:8000"
     volumes:
-      - ./django_app:/app
+      - ./ppv-platform/django_app:/app
     env_file:
-      - ./django_app/.env
+      - ./ppv-platform/django_app/.env
     depends_on:
       - db
       - redis
@@ -41,12 +41,12 @@ services:
       - "8000:8000"
 
   fastapi:
-    build: ./fastapi_app
+    build: ./ppv-platform/fastapi_app
     command: uvicorn main:app --host 0.0.0.0 --port 8001
     volumes:
-      - ./fastapi_app:/app
+      - ./ppv-platform/fastapi_app:/app
     env_file:
-      - ./fastapi_app/.env
+      - ./ppv-platform/fastapi_app/.env
     depends_on:
       - db
       - redis
