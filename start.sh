@@ -3,13 +3,18 @@
 # Debug: List /app contents before starting 
 echo "Listing /app contents:"; ls -l /app
 
-# Wait for Postgres to be ready (robust for cloud deploys)
-echo "Waiting for Postgres at $PGHOST:$PGPORT..."
-until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('${PGHOST}', int('${PGPORT}'))); s.close()" ; do
+
+# Wait for Postgres to be ready using Python (no netcat required)
+# Use fallback values if env vars are empty
+DB_HOST_NAME=${PGHOST:-${DB_HOST:-db}}
+DB_PORT_NUMBER=${PGPORT:-${DB_PORT:-5432}}
+
+echo "Waiting for Postgres at $DB_HOST_NAME:$DB_PORT_NUMBER..."
+until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('$DB_HOST_NAME', int('$DB_PORT_NUMBER'))); s.close()" ; do
   echo "Postgres is unavailable - sleeping"
   sleep 1
 done
-echo "Postgres is up!"
+echo "Postgres is up! Moving to migrations..."
 
 # Use fallback values if env vars are empty
 DB_HOST_NAME=${PGHOST:-${DB_HOST:-db}}
