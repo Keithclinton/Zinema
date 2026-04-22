@@ -4,19 +4,19 @@
 echo "Listing /app contents:"; ls -l /app
 
 # Wait for Postgres to be ready (robust for cloud deploys)
-echo "Waiting for database host '$PGHOST'..."
-while ! nc -z "$PGHOST" "$PGPORT"; do
-	echo "Waiting for Postgres at $PGHOST:$PGPORT..."
-	sleep 1
+echo "Waiting for Postgres at $PGHOST:$PGPORT..."
+until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('${PGHOST}', int('${PGPORT}'))); s.close()" ; do
+  echo "Postgres is unavailable - sleeping"
+  sleep 1
 done
+echo "Postgres is up!"
 
 # Start Django app in the background
-python /app/django_app/manage.py migrate && \
-gunicorn django_app.wsgi:application --chdir /app/django_app --bind 0.0.0.0:8000 &
+cd /app/django_app && python manage.py migrate && gunicorn django_app.wsgi:application --bind 0.0.0.0:8000 &
 DJANGO_PID=$!
 
 # Start FastAPI app in the background
-uvicorn fastapi_app.main:app --host 0.0.0.0 --port 8001 --app-dir /app &
+cd /app/fastapi_app && uvicorn main:app --host 0.0.0.0 --port 8001 &
 FASTAPI_PID=$!
 
 # Wait for both processes
