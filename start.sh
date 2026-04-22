@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Debug: List /app contents before starting servers
+# Debug: List /app contents before starting 
 echo "Listing /app contents:"; ls -l /app
 
 # Wait for Postgres to be ready (robust for cloud deploys)
