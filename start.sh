@@ -11,6 +11,18 @@ until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(
 done
 echo "Postgres is up!"
 
+# Use fallback values if env vars are empty
+DB_HOST_NAME=${PGHOST:-${DB_HOST:-db}}
+DB_PORT_NUMBER=${PGPORT:-${DB_PORT:-5432}}
+
+echo "Waiting for Postgres at $DB_HOST_NAME:$DB_PORT_NUMBER..."
+until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('$DB_HOST_NAME', int('$DB_PORT_NUMBER'))); s.close()" ; do
+  echo "Postgres is unavailable - sleeping"
+  sleep 1
+done
+echo "Postgres is up! Moving to migrations..."
+echo "Postgres is up!"
+
 # Start Django app in the background
 cd /app/django_app && python manage.py migrate && gunicorn django_app.wsgi:application --bind 0.0.0.0:8000 &
 DJANGO_PID=$!
