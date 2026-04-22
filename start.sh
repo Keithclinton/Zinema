@@ -1,5 +1,3 @@
-
-
 #!/bin/sh
 
 # Debug: List /app contents before starting servers
