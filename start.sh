@@ -5,12 +5,6 @@ echo "Listing /app contents:"; ls -l /app
 
 
 
-# Railway: Require PGHOST and PGPORT, fail fast if missing
-if [ -z "$PGHOST" ] || [ -z "$PGPORT" ]; then
-  echo "Error: PGHOST and PGPORT must be set in your environment!"
-  exit 1
-fi
-
 echo "Waiting for Postgres at $PGHOST:$PGPORT..."
 until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect((\"$PGHOST\", int(\"$PGPORT\"))); s.close()" ; do
   echo "Postgres is unavailable - sleeping"
@@ -19,7 +13,7 @@ done
 echo "Postgres is up! Moving to migrations..."
 
 # Use fallback values if env vars are empty
-DB_HOST_NAME=${PGHOST:-${DB_HOST:-db}}
+DB_HOST_NAME=${PGHOST:-${DB_HOST:-zinema.railway.internal}}
 DB_PORT_NUMBER=${PGPORT:-${DB_PORT:-5432}}
 
 echo "Waiting for Postgres at $DB_HOST_NAME:$DB_PORT_NUMBER..."
