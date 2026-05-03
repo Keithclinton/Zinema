@@ -8,7 +8,6 @@ from django.utils import timezone
 from django.conf import settings
 from .models import Payment, AccessToken, Content, User
 from .payment_providers import verify_payment
-from django_redis import get_redis_connection
 # DRF imports for API endpoints
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -16,6 +15,13 @@ from rest_framework.response import Response
 
 import os
 from .serializers import ContentSerializer, PaymentSerializer
+from shared.redis_utils import cache_token
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def health(request):
+    return Response({'status': 'ok'})
 
 @csrf_exempt
 def payment_webhook(request):
@@ -43,8 +49,6 @@ def payment_webhook(request):
             max_uses=1,
             is_active=True
         )
-        # Store in Redis
-        redis_conn = get_redis_connection()
         token_data = {
             'token': str(token_obj.token),
             'user_id': token_obj.user_id,
@@ -55,7 +59,7 @@ def payment_webhook(request):
             'is_active': token_obj.is_active,
         }
         ttl = int((token_obj.expires_at - timezone.now()).total_seconds())
-        redis_conn.set(f"ppv:token:{token_obj.token}", json.dumps(token_data), ex=ttl)
+        cache_token(token_obj.token, token_data, ttl)
         return JsonResponse({'status': 'success', 'token': str(token_obj.token)})
     except Payment.DoesNotExist:
         return JsonResponse({'error': 'Payment not found'}, status=404)

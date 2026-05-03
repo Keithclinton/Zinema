@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(Path(__file__).resolve().parent.parent, '.env'))
@@ -61,25 +62,45 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'django_app.wsgi.application'
 
+def _database_config_from_url(database_url):
+    parsed = urlparse(database_url)
+    return {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': parsed.path.lstrip('/') or 'ppv',
+        'USER': parsed.username or 'ppvuser',
+        'PASSWORD': parsed.password or 'ppvpass',
+        'HOST': parsed.hostname or 'db',
+        'PORT': str(parsed.port or 5432),
+    }
+
+database_url = os.getenv('DATABASE_URL')
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('PGDATABASE', os.getenv('POSTGRES_DB', 'ppv')),
-        'USER': os.getenv('PGUSER', os.getenv('POSTGRES_USER', 'ppvuser')),
-        'PASSWORD': os.getenv('PGPASSWORD', os.getenv('POSTGRES_PASSWORD', 'ppvpass')),
-        'HOST': os.getenv('PGHOST', os.getenv('POSTGRES_HOST', 'db')),
-        'PORT': os.getenv('PGPORT', os.getenv('POSTGRES_PORT', '5432')),
+        **(_database_config_from_url(database_url) if database_url else {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('PGDATABASE', os.getenv('POSTGRES_DB', 'ppv')),
+            'USER': os.getenv('PGUSER', os.getenv('POSTGRES_USER', 'ppvuser')),
+            'PASSWORD': os.getenv('PGPASSWORD', os.getenv('POSTGRES_PASSWORD', 'ppvpass')),
+            'HOST': os.getenv('PGHOST', os.getenv('POSTGRES_HOST', 'db')),
+            'PORT': os.getenv('PGPORT', os.getenv('POSTGRES_PORT', '5432')),
+        }),
     }
 }
 
+REDIS_URL = os.getenv('REDIS_URL')
+
 CACHES = {
-    'default': {
+    'default': ({
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'zinema-local-cache',
+    } if not REDIS_URL else {
         'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://redis:6379/0'),
+        'LOCATION': REDIS_URL,
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         }
-    }
+    })
 }
 
 AUTH_PASSWORD_VALIDATORS = [

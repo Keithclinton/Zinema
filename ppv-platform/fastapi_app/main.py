@@ -1,6 +1,11 @@
 
 # FastAPI import
-from fastapi import FastAPI
+from datetime import datetime, timezone
+from urllib.parse import urlparse
+
+import psycopg2
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 import os
 import sys
 from dotenv import load_dotenv
@@ -12,7 +17,19 @@ load_dotenv()
 
 app = FastAPI()
 
-DB_PARAMS = {
+def _db_params_from_url(database_url):
+    parsed = urlparse(database_url)
+    return {
+        'dbname': parsed.path.lstrip('/') or 'ppv',
+        'user': parsed.username or 'ppvuser',
+        'password': parsed.password or 'ppvpass',
+        'host': parsed.hostname or 'db',
+        'port': parsed.port or 5432,
+    }
+
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+DB_PARAMS = _db_params_from_url(DATABASE_URL) if DATABASE_URL else {
     'dbname': os.getenv('PGDATABASE', os.getenv('POSTGRES_DB', 'ppv')),
     'user': os.getenv('PGUSER', os.getenv('POSTGRES_USER', 'ppvuser')),
     'password': os.getenv('PGPASSWORD', os.getenv('POSTGRES_PASSWORD', 'ppvpass')),

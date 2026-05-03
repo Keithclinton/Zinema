@@ -5,16 +5,8 @@ echo "Listing /app contents:"; ls -l /app
 
 
 
-echo "Waiting for Postgres at $PGHOST:$PGPORT..."
-until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect((\"$PGHOST\", int(\"$PGPORT\"))); s.close()" ; do
-  echo "Postgres is unavailable - sleeping"
-  sleep 1
-done
-echo "Postgres is up! Moving to migrations..."
-
-# Use fallback values if env vars are empty
-DB_HOST_NAME=${PGHOST:-${DB_HOST:-zinema.railway.internal}}
-DB_PORT_NUMBER=${PGPORT:-${DB_PORT:-5432}}
+DB_HOST_NAME=$(python -c "import os; from urllib.parse import urlparse; url = os.getenv('DATABASE_URL'); print(urlparse(url).hostname if url and urlparse(url).hostname else os.getenv('PGHOST', os.getenv('DB_HOST', 'zinema.railway.internal')))" )
+DB_PORT_NUMBER=$(python -c "import os; from urllib.parse import urlparse; url = os.getenv('DATABASE_URL'); print(urlparse(url).port if url and urlparse(url).port else os.getenv('PGPORT', os.getenv('DB_PORT', '5432')))" )
 
 echo "Waiting for Postgres at $DB_HOST_NAME:$DB_PORT_NUMBER..."
 until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('$DB_HOST_NAME', int('$DB_PORT_NUMBER'))); s.close()" ; do
@@ -32,5 +24,5 @@ DJANGO_PID=$!
 cd /app/fastapi_app && uvicorn main:app --host 0.0.0.0 --port 8001 &
 FASTAPI_PID=$!
 
-# Wait for both processes
-wait $DJANGO_PID $FASTAPI_PID
+# Run Nginx in the foreground as the public entrypoint
+nginx -g 'daemon off;'
