@@ -21,10 +21,10 @@ COPY ppv-platform/shared ./shared
 COPY ppv-platform/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY start.sh ./start.sh
 
-# Make start.sh executable
-RUN chmod +x ./start.sh
+# Convert line endings and make executable
+RUN dos2unix ./start.sh || sed -i 's/\r$//' ./start.sh && chmod +x ./start.sh
 
 # Expose the public Nginx port plus the internal app ports
 EXPOSE 80 8000 8001
 
-CMD ["./start.sh"]
+CMD ["/bin/sh", "-c", "exec /app/start.sh"]

@@ -1,20 +1,27 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
-# Debug: List /app contents before starting 
-echo "Listing /app contents:"; ls -l /app
+# Add /app to PYTHONPATH so imports of 'shared' module work from django_app and fastapi_app
+export PYTHONPATH=/app:$PYTHONPATH
 
+# Extract database host and port from DATABASE_URL or fall back to env vars
+if [ -n "$DATABASE_URL" ]; then
+  DB_HOST=$(python3 -c "from urllib.parse import urlparse; u = urlparse('$DATABASE_URL'); print(u.hostname or 'localhost')")
+  DB_PORT=$(python3 -c "from urllib.parse import urlparse; u = urlparse('$DATABASE_URL'); print(u.port or 5432)")
+else
+  DB_HOST=${PGHOST:-${DB_HOST:-localhost}}
+  DB_PORT=${PGPORT:-${DB_PORT:-5432}}
+fi
 
-
-DB_HOST_NAME=$(python -c "import os; from urllib.parse import urlparse; url = os.getenv('DATABASE_URL'); print(urlparse(url).hostname if url and urlparse(url).hostname else os.getenv('PGHOST', os.getenv('DB_HOST', 'zinema.railway.internal')))" )
-DB_PORT_NUMBER=$(python -c "import os; from urllib.parse import urlparse; url = os.getenv('DATABASE_URL'); print(urlparse(url).port if url and urlparse(url).port else os.getenv('PGPORT', os.getenv('DB_PORT', '5432')))" )
-
-echo "Waiting for Postgres at $DB_HOST_NAME:$DB_PORT_NUMBER..."
-until python -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('$DB_HOST_NAME', int('$DB_PORT_NUMBER'))); s.close()" ; do
-  echo "Postgres is unavailable - sleeping"
-  sleep 1
+echo "Waiting for Postgres at $DB_HOST:$DB_PORT..."
+for i in $(seq 1 30); do
+  if python3 -c "import socket; s = socket.socket(); s.settimeout(1); s.connect(('$DB_HOST', int($DB_PORT))); s.close()" 2>/dev/null; then
+    echo "Postgres is up!"
+    break
+  fi
+  echo "Postgres is unavailable (attempt $i/30) - sleeping"
+  sleep 2
 done
-echo "Postgres is up! Moving to migrations..."
-echo "Postgres is up!"
 
 # Start Django app in the background
 cd /app/django_app && python manage.py migrate && gunicorn django_app.wsgi:application --bind 0.0.0.0:8000 &
